@@ -1,5 +1,6 @@
 import { createGlobalStyle } from "styled-components";
 import Router from "./Router";
+import { ReactQueryDevtools } from 'react-query/devtools';
 
 const GlobalStyle= createGlobalStyle`
   @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400&display=swap');
@@ -12,7 +13,7 @@ const GlobalStyle= createGlobalStyle`
   dl, dt, dd, menu, ol, ul, li,
   fieldset, form, label, legend,
   table, caption, tbody, tfoot, thead, tr, th, td,
-  article, aside, canvas, details, embed,
+  article, aside, canvas, details, embed, 
   figure, figcaption, footer, header, hgroup,
   main, menu, nav, output, ruby, section, summary,
   time, mark, audio, video {
@@ -56,9 +57,11 @@ const GlobalStyle= createGlobalStyle`
   }
 
   body{
+    font-weight: 300;
     font-family: 'Source Sans Pro', sans-serif;
     background-color:${(props) => props.theme.bgColor};
     color:${(props)=>props.theme.textColor};
+    line-height: 1.2;
   }
 
   a{
@@ -73,6 +76,7 @@ function App() {
   <>
     <GlobalStyle/>
     <Router/>
+    <ReactQueryDevtools initialIsOpen ={true}/>
   </>
     
   );
