@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import { Switch, Link, Route, useLocation, useParams,useRouteMatch } from "react-router-dom";
+import { useQuery } from "react-query";
+import {
+  Switch,
+  Link,
+  Route,
+  useLocation,
+  useParams,
+  useRouteMatch,
+} from "react-router-dom";
 import styled from "styled-components";
+import { fetchCoinInfo, fetchCoinTickers } from "../api";
 import Chart from "./Chart";
 import Price from "./Price";
 
@@ -25,7 +34,6 @@ const Tab = styled.span<{ isActive: boolean }>`
     display: block;
   }
 `;
-
 
 const Overview = styled.div`
   display: flex;
@@ -63,7 +71,7 @@ const Header = styled.header`
 const Title = styled.h1`
   font-size: 48px;
   color: ${(props) => props.theme.accentColor};
-  margin-bottom:20px;
+  margin-bottom: 20px;
 `;
 
 const Loader = styled.span`
@@ -72,47 +80,47 @@ const Loader = styled.span`
 `;
 
 interface RouteParams {
-  coinId : string;
+  coinId: string;
 }
 
-interface RouteState{
-    coinName: string;
+interface RouteState {
+  coinName: string;
 }
 
-interface InfoData{
-  id : string;
-  name : string;
-  symbol : string;
-  rank : number;
-  is_new : boolean;
-  is_active : boolean;
-  type : string;
-  description : string;
-  message : string;
-  open_source : boolean;
-  started_at : string;
-  development_status : string;
-  hardware_wallet : boolean;
-  proof_type : string;
-  org_structure : string;
-  hash_algorithm : string;
-  first_data_at : string;
-  last_data_at : string;
+interface InfoData {
+  id: string;
+  name: string;
+  symbol: string;
+  rank: number;
+  is_new: boolean;
+  is_active: boolean;
+  type: string;
+  description: string;
+  message: string;
+  open_source: boolean;
+  started_at: string;
+  development_status: string;
+  hardware_wallet: boolean;
+  proof_type: string;
+  org_structure: string;
+  hash_algorithm: string;
+  first_data_at: string;
+  last_data_at: string;
 }
 
-interface PriceData{
-  id : string; 
-  name : string;
-  symbol : string;
-  rank : number;
-  circulating_supply : number;
-  total_supply : number;
-  max_supply : number;
-  beta_value : number;
-  first_data_at : string;
-  last_updated : string;
-  quotes : {
-    USD : {
+interface PriceData {
+  id: string;
+  name: string;
+  symbol: string;
+  rank: number;
+  circulating_supply: number;
+  total_supply: number;
+  max_supply: number;
+  beta_value: number;
+  first_data_at: string;
+  last_updated: string;
+  quotes: {
+    USD: {
       ath_date: string;
       ath_price: number;
       market_cap: number;
@@ -130,41 +138,50 @@ interface PriceData{
       price: number;
       volume_24h: number;
       volume_24h_change_24h: number;
-    }
+    };
   };
 }
 
-
-function Coin(){
-    const [loading, setLoding] = useState(true); 
-    const {coinId} = useParams<RouteParams>();
-    const { state } = useLocation<RouteState>();
-    const [info, setInfo] = useState<InfoData>();
-    const [priceInfo, setPriceInfo] = useState<PriceData>();
-    const priceMatch = useRouteMatch("/:coinId/price");
-    console.log(priceMatch);
-    const chartMatch = useRouteMatch("/:coinId/chart");
-    console.log(chartMatch);
-    useEffect(()=>{
-      (async ()=>{
-        const infoData = await (
-          await fetch(`https://api.coinpaprika.com/v1/coins/${coinId}`)
-          ).json();
-        const priceData = await (
-          await fetch(`https://api.coinpaprika.com/v1/tickers/${coinId}`)
-          ).json();
-        setInfo(infoData);
-        setPriceInfo(priceData);
-        setLoding(false);
-      })();
-    },[coinId]);
-
-    return (
-        <Container>
+function Coin() {
+  const { coinId } = useParams<RouteParams>();
+  const { state } = useLocation<RouteState>();
+  const priceMatch = useRouteMatch("/:coinId/price");
+  const chartMatch = useRouteMatch("/:coinId/chart");
+  const { isLoading: infoLoading, data: infoData } = useQuery<InfoData>(
+    ["info", coinId],
+    () => fetchCoinInfo(coinId)
+  );
+  const { isLoading: tickersLoading, data: tickersData } = useQuery<PriceData>(
+    ["tickers", coinId],
+    () => fetchCoinTickers(coinId)
+  );
+  /* const [info, setInfo] = useState<InfoData>();
+  const [priceInfo, setPriceInfo] = useState<PriceData>();
+  const [loading, setLoding] = useState(true); */
+  /* useEffect(() => {
+    (async () => {
+      const infoData = await (
+        await fetch(`https://api.coinpaprika.com/v1/coins/${coinId}`)
+      ).json();
+      const priceData = await (
+        await fetch(`https://api.coinpaprika.com/v1/tickers/${coinId}`)
+      ).json();
+      setInfo(infoData);
+      setPriceInfo(priceData);
+      setLoding(false);
+    })();
+  }, [coinId]); */
+  const loading = infoLoading || tickersLoading;
+  return (
+    <Container>
       <Header>
-      <Title>
-        {state?.coinName ? state.coinName : loading ? "Loading..." : info?.name}
-      </Title>
+        <Title>
+          {state?.coinName
+            ? state.coinName
+            : loading
+            ? "Loading..."
+            : infoData?.name}
+        </Title>
       </Header>
       {loading ? (
         <Loader>Loading...</Loader>
@@ -173,26 +190,26 @@ function Coin(){
           <Overview>
             <OverviewItem>
               <span>Rank:</span>
-              <span>{info?.rank}</span>
+              <span>{infoData?.rank}</span>
             </OverviewItem>
             <OverviewItem>
               <span>Symbol:</span>
-              <span>${info?.symbol}</span>
+              <span>${infoData?.symbol}</span>
             </OverviewItem>
             <OverviewItem>
               <span>Open Source:</span>
-              <span>{info?.open_source ? "Yes" : "No"}</span>
+              <span>{infoData?.open_source ? "Yes" : "No"}</span>
             </OverviewItem>
           </Overview>
-          <Description>{info?.description}</Description>
+          <Description>{infoData?.description}</Description>
           <Overview>
             <OverviewItem>
               <span>Total Suply:</span>
-              <span>{priceInfo?.total_supply}</span>
+              <span>{tickersData?.total_supply}</span>
             </OverviewItem>
             <OverviewItem>
               <span>Max Supply:</span>
-              <span>{priceInfo?.max_supply}</span>
+              <span>{tickersData?.max_supply}</span>
             </OverviewItem>
           </Overview>
 
@@ -215,8 +232,8 @@ function Coin(){
           </Switch>
         </>
       )}
-      </Container>
-    );
+    </Container>
+  );
 }
 
 export default Coin;
